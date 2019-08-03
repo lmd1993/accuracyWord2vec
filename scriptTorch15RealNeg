@@ -1,0 +1,21 @@
+#!/bin/bash
+for i in 1 3 5 7 10
+do
+    echo $i
+    #    neg_v = self.data.get_neg_v_neg_sampling(pos_pairs, 15) change to 15.
+
+    # log norm
+    python word2vec.py newText2LimitSize word_embeddingNeg15EqualDistEpoch${i} 1 $i 0 log
+    python generateStatsL2Window.py word_embeddingNeg15EqualDistEpoch${i} statsOutput/statslogNeg15EqualDistEpoch${i} vocab.txt word_embeddingNeg15EqualDistEpoch${i}_2 resRealNegEqualDistlogNeg
+
+
+
+    # l2 norm
+    python word2vec.py newText2LimitSize word_embeddingNeg15l2EqualDistEpoch${i} 1 $i 0 l2
+    python generateStatsL2Window.py word_embeddingNeg15l2EqualDistEpoch${i} statsOutput/statsl2Neg15EqualDistEpoch${i} vocab.txt word_embeddingNeg15l2EqualDistEpoch${i}_2 resRealNegEqualDistl2Neg
+
+
+    # l1 norm
+    python word2vec.py newText2LimitSize word_embeddingNeg15l1EqualDistEpoch${i} 1 $i 0 l1
+    python generateStatsL1Window.py word_embeddingNeg15l1EqualDistEpoch${i} statsOutput/statsl1Neg15EqualDistEpoch${i} vocab.txt word_embeddingNeg15l1EqualDistEpoch${i}_2 resRealNegEqualDistl1Neg
+done

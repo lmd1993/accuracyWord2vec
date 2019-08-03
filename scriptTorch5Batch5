@@ -1,0 +1,10 @@
+#!/bin/bash
+for i in 1 3 5 7 10
+do
+    echo $i
+    #    neg_v = self.data.get_neg_v_neg_sampling(pos_pairs, 15) change to 15.
+	# Batch size 5
+    # log norm
+    python word2vec.py newText2LimitSize word_embeddingNeg5Batch5Epoch${i} 1 $i 0 log
+    python generateStatsL2Window.py word_embeddingNeg5Batch5Epoch${i} statsOutput/statslogNeg5Batch5Epoch${i} vocab.txt word_embeddingNeg5Batch5Epoch${i}_2 reslogNeg
+done

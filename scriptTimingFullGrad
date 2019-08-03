@@ -1,0 +1,10 @@
+#!/bin/bash
+for i in 1 2 3 4 5 6 7 8 9 10
+do
+    echo $i
+
+    # l1 norm
+    python word2vec.py newText2LimitSize fullNegative${i} 1 $i 1 l1
+    #python word2vec.py newText2LimitSize word_embeddingTimingBoostl1EqualDistEpochNeg15${i} 3 $i 0 l1
+    #python word2vec.py newText2LimitSize word_embeddingTimingl1EqualDistEpoch${i} 1 $i 0 l1
+done

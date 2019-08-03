@@ -1,0 +1,8 @@
+#!/bin/bash
+for i in 1 3 5 7 10
+do
+	python cbow_model.py $i 500 embNeg5LogEpoch10 embNeg5LogEpoch10_2 L1
+	python generateStatsL1.py emb/embNeg5LogEpoch10 outputStats/logNeg5LogEpoch10 vocab.txt emb/embNeg5LogEpoch10_2 resL1
+	python cbow_model.py $i 500 embNeg5L2Epoch10Boost3 embNeg5L2Epoch10Boost3_2 L1 3
+	python generateStatsL1.py emb/embNeg5L2Epoch10Boost3 outputStats/logNeg5LogEpoch10Boost3 vocab.txt emb/embNeg5L2Epoch10Boost3_2 resBoostL1
+done

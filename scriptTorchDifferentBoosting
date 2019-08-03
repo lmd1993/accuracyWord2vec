@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for j in 10 15 20 50 100 400 600 1000 #different boosting factor
+# before running, please change the word2vec.py line 76 to self.data.get_neg_v_neg_sampling(pos_pairs, 15) 
+do
+    i=5 # 5 epochs
+    echo $i
+
+
+    # l1 norm
+    python word2vec.py newText2LimitSize word_embeddingNeg5Boost${j}l1EqualDistEpochMulti4ndRunLargerLR${i} $j $i 0 l1
+    python generateStatsL1Window.py word_embeddingNeg5Boost${j}l1EqualDistEpochMulti4ndRunLargerLR${i} statsOutput/statsl1Neg5Boost${j}EqualDistEpochMulti4ndRunLargerLR${i} vocab.txt word_embeddingNeg5Boost${j}l1EqualDistEpochMulti4ndRunLargerLR${i}_2 resRealNegEqualDistl1DiffBoost
+done

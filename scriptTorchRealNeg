@@ -1,0 +1,25 @@
+#!/bin/bash
+for i in 1 3 5 7 10
+do
+    echo $i
+    # log norm
+    python word2vec.py newText2LimitSize word_embeddingNeg5EqualDistEpoch${i} 1 $i 0 log
+    python word2vec.py newText2LimitSize word_embeddingNeg5BoostEqualDistEpoch${i} 3 $i 0 log
+    python generateStatsL2Window.py word_embeddingNeg5EqualDistEpoch${i} statsOutput/statslogNeg5EqualDistEpoch${i} vocab.txt word_embeddingNeg5EqualDistEpoch${i}_2 resRealNegEqualDistlogNeg
+    python generateStatsL2Window.py word_embeddingNeg5BoostEqualDistEpoch${i} statsOutput/statslogNeg5BoostEqualDistEpoch${i} vocab.txt word_embeddingNeg5BoostEqualDistEpoch${i}_2 resRealNegEqualDistlogBoost
+
+
+
+    # l2 norm
+    python word2vec.py newText2LimitSize word_embeddingNeg5Boostl2EqualDistEpoch${i} 3 $i 0 l2
+    python word2vec.py newText2LimitSize word_embeddingNeg5l2EqualDistEpoch${i} 1 $i 0 l2
+    python generateStatsL2Window.py word_embeddingNeg5Boostl2EqualDistEpoch${i} statsOutput/statsl2Neg5BoostEqualDistEpoch${i} vocab.txt word_embeddingNeg5Boostl2EqualDistEpoch${i}_2 resRealNegEqualDistl2Boost
+    python generateStatsL2Window.py word_embeddingNeg5l2EqualDistEpoch${i} statsOutput/statsl2Neg5EqualDistEpoch${i} vocab.txt word_embeddingNeg5l2EqualDistEpoch${i}_2 resRealNegEqualDistl2Neg
+
+
+    # l1 norm
+    python word2vec.py newText2LimitSize word_embeddingNeg5Boostl1EqualDistEpoch${i} 3 $i 0 l1
+    python word2vec.py newText2LimitSize word_embeddingNeg5l1EqualDistEpoch${i} 1 $i 0 l1
+    python generateStatsL1Window.py word_embeddingNeg5Boostl1EqualDistEpoch${i} statsOutput/statsl1Neg5BoostEqualDistEpoch${i} vocab.txt word_embeddingNeg5Boostl1EqualDistEpoch${i}_2 resRealNegEqualDistl1Boost
+    python generateStatsL1Window.py word_embeddingNeg5l1EqualDistEpoch${i} statsOutput/statsl1Neg5EqualDistEpoch${i} vocab.txt word_embeddingNeg5l1EqualDistEpoch${i}_2 resRealNegEqualDistl1Neg
+done

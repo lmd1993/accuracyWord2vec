@@ -1,0 +1,12 @@
+#!/bin/bash
+
+for j in 1000 1500 2000 # different boosting factor
+do
+    i=5 # 5 epochs
+    echo $i
+
+
+    # l2 norm
+    python word2vec.py newText2LimitSize word_embeddingNeg5Boost${j}l2EqualDistEpoch${i} $j $i 0 l2
+    python generateStatsL1Window.py word_embeddingNeg5Boost${j}l2EqualDistEpoch${i} statsOutput/statsl2Neg5Boost${j}EqualDistEpoch${i} vocab.txt word_embeddingNeg5Boost${j}l2EqualDistEpoch${i}_2 resRealNegEqualDistl2DiffBoost
+done
