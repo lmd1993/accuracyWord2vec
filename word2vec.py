@@ -20,7 +20,7 @@ class Word2Vec:
                  initial_lr=0.025,
                  min_count=5,
                  noNeg = 0,
-                 loss = "L2",
+                 loss = "l2",
                  boost = 1):
         """Initilize class parameters.
 
@@ -97,6 +97,7 @@ class Word2Vec:
                                         (loss.data,
                                          self.optimizer.param_groups[0]['lr']))
             if i * self.batch_size % 100000 == 0:
+                print("Come to update:%f" %(i * self.batch_size / 100000))
                 lr = self.initial_lr * (1.0 - 1.0 * i / batch_count)
                 for param_group in self.optimizer.param_groups:
                     param_group['lr'] = lr
