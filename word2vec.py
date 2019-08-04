@@ -9,6 +9,20 @@ from tqdm import tqdm
 import sys
 
 import time
+import math
+def sigmoid(xS):
+    x = float(xS)
+    if x > 6:
+        # print("dayu6")
+        return 1
+    if x < -6:
+        # print("xiaoyu-6")
+        return 0
+    return 1 / (1 + math.exp(-x))
+
+
+
+
 class Word2Vec:
     def __init__(self,
                  input_file_name,
@@ -56,7 +70,7 @@ class Word2Vec:
         self.loss = loss
         self.noNeg = noNeg
 
-    def train(self):
+    def train(self, contextDict, context_Word_Dict):
         """Multiple training.
 
         Returns:
@@ -90,7 +104,31 @@ class Word2Vec:
             self.optimizer.zero_grad()
             loss = self.skip_gram_model.forward(pos_u, pos_v, neg_v, self.boost, self.loss, self.noNeg)
             #print(loss.item())
+
             loss.backward()
+            if i * self.batch_size % 10000 == 0:
+
+                    # embedding = self.u_embeddings.weight.data.numpy()
+                firstEmbed = self.skip_gram_model.u_embeddings.weight.data.numpy()
+                secondEmbed = self.skip_gram_model.v_embeddings.weight.data.numpy()
+                word2id = self.data.word2id
+                id2word = self.data.id2word
+
+                def vectorSig(key, key2, emb, emb2):
+                        # print(key)
+                        # print(" key2 %s"%key2)
+                        return sigmoid(emb[word2id[key]].dot(emb2[word2id[key2]]))
+                res = []
+                for key, value in contextDict.items():
+                        for key2, value2 in context_Word_Dict[key].items():
+                            #        print(key)
+                            #        print(key2)
+                            ideal = 0
+                            act = vectorSig(key, key2, firstEmbed, secondEmbed)
+                            ideal = value2 / float(value)
+                            res.append(abs(act - ideal))
+                diffToIdeal = np.mean(res)
+                print(" Current diff %f" % np.mean(res))
             self.optimizer.step()
 
             process_bar.set_description("Loss: %0.8f, lr: %0.6f" %
@@ -112,10 +150,68 @@ class Word2Vec:
         with open(self.output_file_name[:-1]+"log", 'a') as f:
             f.write("TotalTime %d \n" %sumTime)
 if __name__ == '__main__':
+    import sys
+    import numpy as np
+
+    UNKNOWN_WORD = "<unk>"
+    # binFN = sys.argv[1]  # embedding file
+    # embedding = binFN
+    # outputName = sys.argv[2]  # output file
+    # vocab = "" # vocab file
+    # embedding2 = sys.argv[4]  # second embedding file
+    # for window size 1. Each two words a, b, to get the #(a, b)/#(a)
+    # shuffleFile = sys.argv[5]
+    contextDict = {}  # context word occurance #(a)
+    context_Word_Dict = {}  # key: context word; value: Dict {word: #}, #(a with different b)
+    dictWords = {} # key: word, value: num appear
+    """word embedding loading and vocabulary"""
+    wordCount = 0
+    sizeDimension = 0
+    windowSize = 3
+    """ideal stats"""
+    with open('vocab.txt', 'r') as f:
+        for line in f:
+            if line.split()[0] in dictWords:
+                continue
+            else:
+                dictWords[line.split()[0]] = line.split()[1]
+    with open('newText2LimitSize', 'r') as f:
+        for line in f:
+            # print ("1")
+            array = []
+            wordList = line.split()
+            for i in range(0, len(wordList)):
+                tmp = ""
+                if wordList[i] in dictWords:
+                    tmp = wordList[i]
+                else:
+                    continue
+                #                tmp = UNKNOWN_WORD
+                array.append(tmp)
+
+            # with window size generate pair (i, j)
+            for i, u in enumerate(array):
+                for j, v in enumerate(
+                        array[max(i - windowSize, 0):i + windowSize + 1]):
+                    # u context, v predict
+                    if u in contextDict:
+                        contextDict[u] = contextDict[u] + 1
+                    else:
+                        contextDict[u] = 1
+                    if u in context_Word_Dict:
+                        if v in context_Word_Dict[u]:
+                            context_Word_Dict[u][v] = context_Word_Dict[u][v] + 1
+                        else:
+                            context_Word_Dict[u][v] = 1
+                    else:
+                        context_Word_Dict[u] = {}
+                        context_Word_Dict[u][v] = 1
+
+
     w2v = Word2Vec(input_file_name=sys.argv[1], output_file_name=sys.argv[2], boost = int(sys.argv[3]), iteration = int(sys.argv[4]), noNeg = int(sys.argv[5]), loss = sys.argv[6])
     #w2v.train()
     #start = time.time()
-    w2v.train()
+    w2v.train(contextDict, context_Word_Dict)
     #done = time.time()
     #print("time")
     #print(done-start)
