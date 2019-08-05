@@ -82,6 +82,7 @@ class Word2Vec:
         process_bar = tqdm(range(int(batch_count)))
         # self.skip_gram_model.save_embedding(
         #     self.data.id2word, 'begin_embedding.txt', self.use_cuda)
+        diffForEpoch = []
         for i in process_bar:
             pos_pairs = self.data.get_batch_pairs(self.batch_size,
                                                   self.window_size)
@@ -128,7 +129,8 @@ class Word2Vec:
                             ideal = value2 / float(value)
                             res.append(abs(act - ideal))
                 diffToIdeal = np.mean(res)
-                print(" Current diff %f" % np.mean(res))
+                # print(" Current diff %f" % np.mean(res))
+                diffForEpoch.append(diffToIdeal)
             self.optimizer.step()
 
             process_bar.set_description("Loss: %0.8f, lr: %0.6f" %
@@ -144,6 +146,9 @@ class Word2Vec:
         self.skip_gram_model.save_embedding(
             self.data.id2word, self.output_file_name, self.use_cuda)
         print("Total time %d"%sumTime)
+        print("Different for different epoch as:")
+        for i in range(len(diffForEpoch)):
+            print("%d %f" %(i, diffForEpoch[i]))
         # 10 epochs
         if "10" in self.output_file_name:
             self.output_file_name = self.output_file_name[:-1]
