@@ -88,7 +88,7 @@ class Word2Vec:
                                                   self.window_size)
             if self.noNeg == 0:
                 # Change the negative sample count here
-                neg_v = self.data.get_neg_v_neg_sampling(pos_pairs, 15)
+                neg_v = self.data.get_neg_v_neg_sampling(pos_pairs, 5)
             else:
                 neg_v = self.data.get_all_neg(pos_pairs)
             pos_u = [pair[0] for pair in pos_pairs]

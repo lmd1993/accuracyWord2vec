@@ -94,18 +94,27 @@ class InputData:
     # @profile
     def get_neg_v_neg_sampling(self, pos_word_pair, count):
         # Equal distribution
-        neg_v = numpy.random.randint(0, len(self.word_frequency) - 1, size=(len(pos_word_pair), count)).tolist()
+#        neg_v = numpy.random.randint(0, len(self.word_frequency) - 1, size=(len(pos_word_pair), count)).tolist()
+ #       for i in range(len(neg_v)):
+  #          if pos_word_pair[i][1] in neg_v[i]:
+   #             for j in range(len(neg_v[i])):
+    #                if neg_v[i][j] == pos_word_pair[i][1]:
+     #                   #print("one time")
+      #                  newValue = numpy.random.randint(0, len(self.word_frequency) - 1)
+       #                 while newValue == pos_word_pair[i][1]:
+        #                    newValue = numpy.random.randint(0, len(self.word_frequency) - 1)
+         #               neg_v[i][j] = newValue 
+        neg_v = numpy.random.choice(
+            self.sample_table, size=(len(pos_word_pair), count)).tolist()
         for i in range(len(neg_v)):
             if pos_word_pair[i][1] in neg_v[i]:
                 for j in range(len(neg_v[i])):
                     if neg_v[i][j] == pos_word_pair[i][1]:
                         #print("one time")
-                        newValue = numpy.random.randint(0, len(self.word_frequency) - 1)
+                        newValue = numpy.random.choice(self.sample_table, 1)[0]
                         while newValue == pos_word_pair[i][1]:
-                            newValue = numpy.random.randint(0, len(self.word_frequency) - 1)
-                        neg_v[i][j] = newValue 
-        #neg_v = numpy.random.choice(
-        #    self.sample_table, size=(len(pos_word_pair), count)).tolist()
+                            newValue = numpy.random.choice(self.sample_table, 1)[0]
+                        neg_v[i][j] = newValue
         return neg_v
     def get_all_neg(self, pos_word_pair):
         allPossible = list(self.id2word.keys())
