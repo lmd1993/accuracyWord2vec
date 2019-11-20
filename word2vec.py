@@ -72,7 +72,8 @@ class Word2Vec:
 
     def train(self, contextDict, context_Word_Dict):
         """Multiple training.
-
+        context_Word_Dict：For a context x, the co-occur with x, #xy.
+        contextDict： #x context apperance
         Returns:
             None.
         """
@@ -126,8 +127,8 @@ class Word2Vec:
                             #        print(key2)
                             ideal = 0
                             act = vectorSig(key, key2, firstEmbed, secondEmbed)
-                            ideal = value2 / float(value)
-                            res.append(abs(act - ideal))
+                            ideal = value2 / float(value) # Probability #xy/#x
+                            res.append(abs(act - ideal)) # abs difference
                 diffToIdeal = np.mean(res)
                 # print(" Current diff %f" % np.mean(res))
                 diffForEpoch.append(diffToIdeal)
