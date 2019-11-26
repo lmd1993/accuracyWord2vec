@@ -46,6 +46,36 @@ class SkipGramModel(nn.Module):
         self.u_embeddings.weight.data.uniform_(-initrange, initrange)
         self.v_embeddings.weight.data.uniform_(-0, 0)
 
+    def forwardNoDup(self, pos_u, pos_v, real_num, context_u_num, boost = 1, loss = "NoDup", noNeg = 0):
+        """Forward process.
+
+        As pytorch designed, all variables must be batch format, so all input of this method is a list of word id.
+
+        Args:
+            pos_u: list of center word ids for positive word pairs.
+            pos_v: list of neibor word ids for positive word pairs.
+            neg_u: list of center word ids for negative word pairs.
+            neg_v: list of neibor word ids for negative word pairs.
+
+        Returns:
+            Loss of this process, a pytorch variable.
+        """
+        emb_u = self.u_embeddings(pos_u)
+        emb_v = self.v_embeddings(pos_v)
+        score = torch.mul(emb_u, emb_v).squeeze()
+        score = torch.sum(score, dim=1)
+
+        if loss == "NoDup":
+            # score = torch.pow(1 - F.sigmoid(score), 2)
+            # neg_score = torch.pow(F.sigmoid(neg_score), 2) * boost
+            # return (torch.sum(score) + torch.sum(neg_score))
+
+            score = torch.pow(real_num - F.sigmoid(score), 2)
+            return (torch.sum(context_u_num * score))
+        else:
+            print("No Dup")
+            return 1
+
     def forward(self, pos_u, pos_v, neg_v, boost = 1, loss = "L2", noNeg = 0):
         """Forward process.
 
