@@ -36,10 +36,14 @@ class InputData:
                     word_frequency[w] += 1
                 except:
                     word_frequency[w] = 1
+        # only for adaptive
+        word_frequency = {k: v for k, v in sorted(word_frequency.items(), key=lambda item: item[1], reverse=True)}
+
         self.word2id = dict()
         self.id2word = dict()
         wid = 0
         self.word_frequency = dict()
+
         for w, c in word_frequency.items():
             if c < min_count:
                 self.sentence_length -= c
