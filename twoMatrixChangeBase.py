@@ -111,73 +111,21 @@ def normalize(x):
 # embNoNeg = normalize(embNoNeg) # c1
 # embNoNeg2 = normalize(embNoNeg2) # t1
 
-c1 = embNoNeg
-t1 = embNoNeg2
-c2 = emb
-t2 = emb2
-#c1TC2
-c1Tc2 = np.transpose(c1) @ c2
-c2Tc2 = np.transpose(c2) @ c2
-c1Tc2_c2Tc2_1 = c1Tc2 @ np.linalg.pinv(c2Tc2)
-a = t1 @ c1Tc2_c2Tc2_1 # RT1
 
-sigmoidOurs = c2 @ np.transpose(t2)
-sigmoidNoNeg = c1 @ np.transpose(t1)
-import math
-def sigmoid(xS):
-    x = float(xS)
-    if x > 6:
-        # print("dayu6")
-        return 1
-    if x < -6:
-        # print("xiaoyu-6")
-        return 0
-
-    return 1 / (1 + math.exp(-x))
-myfunc_vec = np.vectorize(sigmoid)
-# resultOurs = myfunc_vec(sigmoidOurs)
-# resultNoNeg = myfunc_vec(sigmoidNoNeg)
-
-# print((abs(resultOurs - resultNoNeg)).mean())
-diff = list()
-e1 = 0
-e2 = 0
-for i in range(embNoNeg2.shape[0]):
-    for j in range(embNoNeg2.shape[0]):
-        resultNoNeg = sigmoid(sigmoidNoNeg[i][j])
-        resultOurs = sigmoid(sigmoidOurs[i][j])
-        if resultNoNeg > 0 and resultNoNeg <1 :
-            e1+=1
-        if resultOurs > 0 and resultOurs < 1:
-            e2+=1
-        if resultNoNeg != 0:
-            diff.append(abs(resultNoNeg - resultOurs))
-print(e1)
-print(np.mean(diff))
-# a = emb @ np.linalg.pinv(embNoNeg) # c2 * (c1)^(-1)
-# whetherOrtho = a @ np.transpose(a) # (c1 c2^-1) (c2^-1T c1^T)
-# a =  a@ emb2   # (c1 * c2^-1) t2
+a = embNoNeg @ np.linalg.pinv(emb) # c1 * (c2)^(-1)
+whetherOrtho = a @ np.transpose(a) # (c1 c2^-1) (c2^-1T c1^T)
+a = a @ emb2  # (c1 * c2^-1) t2
+emb2Should = (emb @ np.linalg.pinv(embNoNeg) )@ embNoNeg2 # emb* (embNoNeg)^(-1) * embNoNeg2
 listofDist = list()
 
-import math
 
-
-
-
-firstOneList = list()
-secondOneList = list()
 for i in range(embNoNeg2.shape[0]):
-    dist = np.linalg.norm(a[i] - t2[i], 2)
-    # firstOne = sigmoid(embNoNeg[i].dot(embNoNeg2[i]))
-    # firstOneList.append(firstOne)
-    # secondOne = sigmoid(emb[i].dot(emb2[i]))
-    # secondOneList.append(secondOne)
-    # dist = abs(sigmoid(embNoNeg[i].dot(embNoNeg2[i])) - sigmoid(emb[i].dot(emb2[i])))
+    dist = np.linalg.norm(a[i] - embNoNeg2[i], 2)
     listofDist.append(dist)
 
 listofDistNoRotate = list()
 for i in range(embNoNeg2.shape[0]):
-    dist = np.linalg.norm(emb2[i] - embNoNeg2[i], 2)
+    dist = np.linalg.norm(embNoNeg[i] - embNoNeg2[i], 2)
     listofDistNoRotate.append(dist)
 # for i in range(embNoNeg2.shape[0]):
 #     dist = np.linalg.norm(emb[i] - embNoNeg[i])
@@ -216,35 +164,21 @@ for i in range(a.shape[0]):
     dist = np.linalg.norm(emb[i], 2)
     listofC2.append(dist)
 
-#
-# print("|C1|: %f" % np.mean(listofC1))
-# print("|T1|: %f\n" % np.mean(listofDist))
-#
-# print("|C2|: %f" % np.mean(listofC2))
-# print("|T2|: %f\n" % np.mean(listofT2))
-#
-# print("|R T2| ~ |T1|: %f" % (np.mean(listofA)))
-# print("|R T2 - T1|: %f" % np.mean(listofNewDist))
-# print("|T2 - T1|: %f\n\n" % np.mean(listofDistNoRotate))
-
-
 
 print("|C1|: %f" % np.mean(listofC1))
-print("|T1|: %f\n" % np.mean(listofNewDist))
+print("|T1|: %f\n" % np.mean(listofDist))
 
 print("|C2|: %f" % np.mean(listofC2))
 print("|T2|: %f\n" % np.mean(listofT2))
 
-print("|R T1| ~ T2: %f" % (np.mean(listofA)))
-print("|R T1 - T2|: %f" % np.mean(listofDist))
+print("|R T2| ~ |T1|: %f" % (np.mean(listofA)))
+print("|R T2 - T1|: %f" % np.mean(listofNewDist))
 print("|T2 - T1|: %f" % np.mean(listofDistNoRotate))
 
 
-
-
-# print("|R T2 - T1|: %f" % np.mean(listofNewDist))
-# print("|T1|: %f\n" % np.mean(listofDist))
-# print("|T2|: %f\n" % np.mean(listofT2))
+# print("|R T2 - T1|: %f" % np.mean(listofDist)) #
+# print("|T1|: %f\n" % np.mean(listofNewDist)) # no negative sampling; embNoNeg2
+# print("|T2|: %f\n" % np.mean(listofT2)) # our embedding; emb2
 # print("Relative is %f" % np.mean(listofNewDist)/np.mean(listofDist))
 
 #|RT1- T2|, relative for t2

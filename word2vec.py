@@ -59,7 +59,7 @@ class Word2Vec:
         self.window_size = window_size
         self.iteration = iteration
         self.initial_lr = initial_lr
-        self.skip_gram_model = SkipGramModel(self.emb_size, self.emb_dimension)
+        self.skip_gram_model = SkipGramModel(self.emb_size, self.emb_dimension, m = "adaptive")
         self.use_cuda = False
         #self.use_cuda = torch.cuda.is_available()
         #if self.use_cuda:
@@ -103,7 +103,10 @@ class Word2Vec:
                 neg_v = neg_v.cuda()
             start = time.time()
             self.optimizer.zero_grad()
-            loss = self.skip_gram_model.forward(pos_u, pos_v, neg_v, self.boost, self.loss, self.noNeg)
+            #normal forward
+            # loss = self.skip_gram_model.forward(pos_u, pos_v, neg_v, self.boost, self.loss, self.noNeg)
+            #adaptive forward
+            loss = self.skip_gram_model.forwardAdaptive(pos_u, pos_v, neg_v, self.boost, self.loss, self.noNeg)
             #print(loss.item())
 
             loss.backward()

@@ -2,12 +2,13 @@ import sys
 import numpy as np
 UNKNOWN_WORD = "<unk>"
 binFN = sys.argv[1] #embedding file
-embedding = binFN
+directory = "twoTimesEmbed/"
+embedding = directory + binFN
 
-embedding2 = sys.argv[2] # second embedding file
+embedding2 = directory+ sys.argv[2] # second embedding file
 # for window size 1. Each two words a, b, to get the #(a, b)/#(a)
-embeddingNoNeg = sys.argv[3]
-embeddingNoNeg2 = sys.argv[4]
+embeddingNoNeg = directory + sys.argv[3]
+embeddingNoNeg2 = directory+ sys.argv[4]
 dictWords = {}
 """word embedding loading and vocabulary"""
 wordCount = 0
@@ -111,6 +112,10 @@ def normalize(x):
 # embNoNeg = normalize(embNoNeg) # c1
 # embNoNeg2 = normalize(embNoNeg2) # t1
 
+
+#a = emb @ np.linalg.pinv(embNoNeg) # c1 * (c2)^(-1)
+#whetherOrtho = a @ np.transpose(a) # (c1 c2^-1) (c2^-1T c1^T)
+#a = a @ emb2  # (c1 * c2^-1) t2
 c1 = embNoNeg
 t1 = embNoNeg2
 c2 = emb
@@ -121,63 +126,16 @@ c2Tc2 = np.transpose(c2) @ c2
 c1Tc2_c2Tc2_1 = c1Tc2 @ np.linalg.pinv(c2Tc2)
 a = t1 @ c1Tc2_c2Tc2_1 # RT1
 
-sigmoidOurs = c2 @ np.transpose(t2)
-sigmoidNoNeg = c1 @ np.transpose(t1)
-import math
-def sigmoid(xS):
-    x = float(xS)
-    if x > 6:
-        # print("dayu6")
-        return 1
-    if x < -6:
-        # print("xiaoyu-6")
-        return 0
-
-    return 1 / (1 + math.exp(-x))
-myfunc_vec = np.vectorize(sigmoid)
-# resultOurs = myfunc_vec(sigmoidOurs)
-# resultNoNeg = myfunc_vec(sigmoidNoNeg)
-
-# print((abs(resultOurs - resultNoNeg)).mean())
-diff = list()
-e1 = 0
-e2 = 0
-for i in range(embNoNeg2.shape[0]):
-    for j in range(embNoNeg2.shape[0]):
-        resultNoNeg = sigmoid(sigmoidNoNeg[i][j])
-        resultOurs = sigmoid(sigmoidOurs[i][j])
-        if resultNoNeg > 0 and resultNoNeg <1 :
-            e1+=1
-        if resultOurs > 0 and resultOurs < 1:
-            e2+=1
-        if resultNoNeg != 0:
-            diff.append(abs(resultNoNeg - resultOurs))
-print(e1)
-print(np.mean(diff))
-# a = emb @ np.linalg.pinv(embNoNeg) # c2 * (c1)^(-1)
-# whetherOrtho = a @ np.transpose(a) # (c1 c2^-1) (c2^-1T c1^T)
-# a =  a@ emb2   # (c1 * c2^-1) t2
 listofDist = list()
 
-import math
 
-
-
-
-firstOneList = list()
-secondOneList = list()
 for i in range(embNoNeg2.shape[0]):
     dist = np.linalg.norm(a[i] - t2[i], 2)
-    # firstOne = sigmoid(embNoNeg[i].dot(embNoNeg2[i]))
-    # firstOneList.append(firstOne)
-    # secondOne = sigmoid(emb[i].dot(emb2[i]))
-    # secondOneList.append(secondOne)
-    # dist = abs(sigmoid(embNoNeg[i].dot(embNoNeg2[i])) - sigmoid(emb[i].dot(emb2[i])))
     listofDist.append(dist)
 
 listofDistNoRotate = list()
 for i in range(embNoNeg2.shape[0]):
-    dist = np.linalg.norm(emb2[i] - embNoNeg2[i], 2)
+    dist = np.linalg.norm(t1[i] - t2[i], 2)
     listofDistNoRotate.append(dist)
 # for i in range(embNoNeg2.shape[0]):
 #     dist = np.linalg.norm(emb[i] - embNoNeg[i])
@@ -216,37 +174,51 @@ for i in range(a.shape[0]):
     dist = np.linalg.norm(emb[i], 2)
     listofC2.append(dist)
 
-#
+
 # print("|C1|: %f" % np.mean(listofC1))
-# print("|T1|: %f\n" % np.mean(listofDist))
+# print("|T1|: %f\n" % np.mean(listofDist)) #Wrong
 #
 # print("|C2|: %f" % np.mean(listofC2))
 # print("|T2|: %f\n" % np.mean(listofT2))
 #
-# print("|R T2| ~ |T1|: %f" % (np.mean(listofA)))
+print("|R T1| ~ |T2|: %f" % (np.mean(listofA)))
 # print("|R T2 - T1|: %f" % np.mean(listofNewDist))
-# print("|T2 - T1|: %f\n\n" % np.mean(listofDistNoRotate))
-
-
-
-print("|C1|: %f" % np.mean(listofC1))
-print("|T1|: %f\n" % np.mean(listofNewDist))
-
-print("|C2|: %f" % np.mean(listofC2))
-print("|T2|: %f\n" % np.mean(listofT2))
-
-print("|R T1| ~ T2: %f" % (np.mean(listofA)))
-print("|R T1 - T2|: %f" % np.mean(listofDist))
 print("|T2 - T1|: %f" % np.mean(listofDistNoRotate))
 
+print("|R T1 - T2|: %f" % np.mean(listofDist))
+print("|T1|: %f\n" % np.mean(listofNewDist))
+print("|T2|: %f\n" % np.mean(listofT2))
+#print("Relative is %f" % (np.mean(listofDist)/np.mean(listofT2)))
+#print("Relative no rotate is %f" % (np.mean(listofDistNoRotate)/np.mean(listofT2)))
+
+# No Neg 2: 0.01415732547747142 word_embeddingNoNegl2EpochMultiRunRandomSecond10 word_embeddingNoNegl2EpochMultiRunRandomSecond10_2
+# No Neg: 0.014156843306371224 word_embeddingNoNegl2EpochMultiRunRandom10 word_embeddingNoNegl2EpochMultiRunRandom10_2
+# Our first: 0.014303889964302173 word_embeddingPairs10 word_embeddingPairs10_2
+# Our Second: 0.016427690755805156 word_embeddingPairs_Second10 word_embeddingPairs_Second10_2
+#python twoMatrixNew.py word_embeddingPairs10 word_embeddingPairs10_2 word_embeddingPairs_Second10 word_embeddingPairs_Second10_2
+# |R T1| ~ |T2|: 2140.879906
+# |T2 - T1|: 13.596384
+# |R T1 - T2|: 2140.890457
+# |T1|: 10.209132
+#
+# |T2|: 7.291157
+
+
+#python twoMatrixNew.py word_embeddingNoNegl2EpochMultiRunRandomSecond10 word_embeddingNoNegl2EpochMultiRunRandomSecond10_2 word_embeddingNoNegl2EpochMultiRunRandom10 word_embeddingNoNegl2EpochMultiRunRandom10_2
+
+# |R T1| ~ |T2|: 47.480903
+# |T2 - T1|: 3.747547
+# |R T1 - T2|: 47.376924
+# |T1|: 2.876741
+#
+# |T2|: 2.586507
 
 
 
-# print("|R T2 - T1|: %f" % np.mean(listofNewDist))
-# print("|T1|: %f\n" % np.mean(listofDist))
-# print("|T2|: %f\n" % np.mean(listofT2))
-# print("Relative is %f" % np.mean(listofNewDist)/np.mean(listofDist))
-
-#|RT1- T2|, relative for t2
-# for our method, fix one and keep training
-# for their method, fix one and keep training
+# python twoMatrixNew.py word_embeddingPairs10 word_embeddingPairs10_2 word_embeddingNoNegl2EpochMultiRunRandom10 word_embeddingNoNegl2EpochMultiRunRandom10_2
+# |R T1| ~ |T2|: 122.087320
+# |T2 - T1|: 8.035650
+# |R T1 - T2|: 122.886668
+# |T1|: 2.586507
+#
+# |T2|: 7.291157

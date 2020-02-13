@@ -14,7 +14,7 @@ class SkipGramModel(nn.Module):
         v_embedding: Embedding for neibor words.
     """
 
-    def __init__(self, emb_size, emb_dimension):
+    def __init__(self, emb_size, emb_dimension, m = "noAdaptive"):
         """Initialize model parameters.
 
         Apply for two embedding layers.
@@ -31,7 +31,11 @@ class SkipGramModel(nn.Module):
         self.emb_size = emb_size
         self.emb_dimension = emb_dimension
         self.u_embeddings = nn.Embedding(emb_size, emb_dimension, sparse=True)
+
         self.v_embeddings = nn.Embedding(emb_size, emb_dimension, sparse=True)
+        if m != "noAdaptive":
+            vs = 2105
+            self.adapt = nn.AdaptiveLogSoftmaxWithLoss(emb_size, vs, cutoffs=[round(vs/15),3*round(vs/15)],div_value=4)
         self.init_emb()
 
     def init_emb(self):
@@ -44,6 +48,7 @@ class SkipGramModel(nn.Module):
         """
         initrange = 0.5 / self.emb_dimension
         self.u_embeddings.weight.data.uniform_(-initrange, initrange)
+        # self.v_embeddings.weight.data.uniform_(-initrange, initrange)
         self.v_embeddings.weight.data.uniform_(-0, 0)
 
     def forwardNoDup(self, pos_u, pos_v, real_num, context_u_num, boost = 1, loss = "NoDup", noNeg = 0):
@@ -96,6 +101,7 @@ class SkipGramModel(nn.Module):
         score = torch.sum(score, dim=1)
         neg_emb_v = self.v_embeddings(neg_v)
         neg_score = torch.bmm(neg_emb_v, emb_u.unsqueeze(2)).squeeze()
+
         if loss == "log":
             score = F.logsigmoid(score)
             # sigmoid(-1*neg_score) = 1 - sigmoid(neg_score)
@@ -113,6 +119,48 @@ class SkipGramModel(nn.Module):
             score = torch.pow(1 - F.sigmoid(score), 2)
             neg_score = torch.pow(F.sigmoid(neg_score), 2) * boost
             return (torch.sum(score) + torch.sum(neg_score))
+
+    def forwardAdaptive(self, pos_u, pos_v, neg_v, boost = 1, loss = "L2", noNeg = 0):
+        """Forward process.
+
+        As pytorch designed, all variables must be batch format, so all input of this method is a list of word id.
+
+        Args:
+            pos_u: list of center word ids for positive word pairs.
+            pos_v: list of neibor word ids for positive word pairs.
+            neg_u: list of center word ids for negative word pairs.
+            neg_v: list of neibor word ids for negative word pairs.
+
+        Returns:
+            Loss of this process, a pytorch variable.
+        """
+        emb_u = self.u_embeddings(pos_u)
+        return self.adapt(emb_u, pos_v).loss
+
+        # emb_u = self.u_embeddings(pos_u)
+        # emb_v = self.v_embeddings(pos_v)
+        # score = torch.mul(emb_u, emb_v).squeeze()
+        # score = torch.sum(score, dim=1)
+        # neg_emb_v = self.v_embeddings(neg_v)
+        # neg_score = torch.bmm(neg_emb_v, emb_u.unsqueeze(2)).squeeze()
+        #
+        # if loss == "log":
+        #     score = F.logsigmoid(score)
+        #     # sigmoid(-1*neg_score) = 1 - sigmoid(neg_score)
+        #     neg_score = F.logsigmoid(-1* neg_score)*boost
+        #     if noNeg == 0:
+        #         return -1 * (torch.sum(score) + torch.sum(neg_score))
+        #     else:
+        #         # if not /400, will be all nan
+        #         return -1 * (torch.sum(score) + torch.sum(neg_score))/400
+        # elif loss == "l1":
+        #     score = torch.abs(1 - F.sigmoid(score))
+        #     neg_score = torch.abs(F.sigmoid(neg_score))* boost
+        #     return (torch.sum(score) + torch.sum(neg_score))
+        # elif loss == "l2":
+        #     score = torch.pow(1 - F.sigmoid(score), 2)
+        #     neg_score = torch.pow(F.sigmoid(neg_score), 2) * boost
+        #     return (torch.sum(score) + torch.sum(neg_score))
 
     def save_embedding(self, id2word, file_name, use_cuda):
         """Save all embeddings to file.

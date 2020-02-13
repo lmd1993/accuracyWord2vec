@@ -132,9 +132,6 @@ class Word2Vec:
                 diffToIdeal = np.mean(res)
                 # print(" Current diff %f" % np.mean(res))
                 diffForEpoch.append(diffToIdeal)
-            # if i * self.batch_size /pair_count == 0: # each iteration record once
-                self.skip_gram_model.save_embedding(
-                        self.data.id2word, "noNeg_"+self.output_file_name+"ByBatch_" + str(i)+"_Embed", self.use_cuda)
             self.optimizer.step()
 
             process_bar.set_description("Loss: %0.8f, lr: %0.6f" %
@@ -143,7 +140,6 @@ class Word2Vec:
             if i * self.batch_size % 100000 == 0:
                 print("Come to update:%f" %(i * self.batch_size / 100000))
                 lr = self.initial_lr * (1.0 - 1.0 * i / batch_count)
-
                 for param_group in self.optimizer.param_groups:
                     param_group['lr'] = lr
             end = time.time()
@@ -160,103 +156,102 @@ class Word2Vec:
         with open(self.output_file_name[:-1]+"log", 'a') as f:
             f.write("TotalTime %d \n" %sumTime)
 
-    # def trainNoDup(self, allPosiblePairPos_u, allPosiblePairPos_v, contextDictID, context_Word_DictID):
-    #     """Multiple training.
-    #     context_Word_DictID：For a context x_id, the co-occur with x_id, #x_idy_id.
-    #     contextDictID： #x_id context apperance
-    #     Returns:
-    #         None.
-    #     """
-    #     sumTime = 0
-    #     # len(allPosiblePairPos) = 4431025
-    #     # batch_count =
-    #     # batch_count = self.iteration * (len(allPosiblePairPos_u)) / (self.batch_size*2105)
-    #     batchS = 50
-    #     batch_count = self.iteration * (len(allPosiblePairPos_u)) / batchS
-    #     process_bar = tqdm(range(int(batch_count)))
-    #     # self.skip_gram_model.save_embedding(
-    #     #     self.data.id2word, 'begin_embedding.txt', self.use_cuda)
-    #     diffForEpoch = []
-    #     for i in process_bar:
-    #         allPairsN = self.batch_size *  2105
-    #         pos_u = allPosiblePairPos_u[allPairsN*(i): allPairsN*(i+1)]
-    #         pos_v = allPosiblePairPos_v[allPairsN*(i): allPairsN*(i+1)]
-    #         context_u_num= [float(contextDictID[pair]) for pair in pos_u] # #x
-    #         real_num = list() # #xy/#x if we know. If there is no such value, then just assign 0
-    #         for j in range(len(pos_u)):
-    #             if pos_v[j] in context_Word_DictID[pos_u[j]]:
-    #                 real_num.append(context_Word_DictID[pos_u[j]][pos_v[j]]/float(context_u_num[j]))
-    #             else:
-    #                 real_num.append(0.0)
-    #
-    #         pos_u = Variable(torch.LongTensor(pos_u))
-    #         pos_v = Variable(torch.LongTensor(pos_v))
-    #
-    #         real_num = Variable(torch.FloatTensor(real_num))
-    #         context_u_num = Variable(torch.FloatTensor(context_u_num))
-    #         if self.use_cuda:
-    #             pos_u = pos_u.cuda()
-    #             pos_v = pos_v.cuda()
-    #             real_num = real_num.cuda()
-    #             context_u_num = context_u_num.cuda()
-    #         start = time.time()
-    #         self.optimizer.zero_grad()
-    #         loss = self.skip_gram_model.forwardNoDup(pos_u, pos_v, real_num, context_u_num, self.boost, "NoDup", self.noNeg)
-    #         # print(loss.item())
-    #
-    #         loss.backward()
-    #         if i * self.batch_size % 10000 == 0:
-    #
-    #             # embedding = self.u_embeddings.weight.data.numpy()
-    #             firstEmbed = self.skip_gram_model.u_embeddings.weight.data.numpy()
-    #             secondEmbed = self.skip_gram_model.v_embeddings.weight.data.numpy()
-    #             word2id = self.data.word2id
-    #             id2word = self.data.id2word
-    #
-    #             def vectorSig(key, key2, emb, emb2):
-    #                 # print(key)
-    #                 # print(" key2 %s"%key2)
-    #                 return sigmoid(emb[key].dot(emb2[key2]))
-    #
-    #             res = []
-    #             for key, value in contextDictID.items():
-    #                 for key2, value2 in context_Word_DictID[key].items():
-    #                     #        print(key)
-    #                     #        print(key2)
-    #                     ideal = 0
-    #                     act = vectorSig(key, key2, firstEmbed, secondEmbed)
-    #                     ideal = value2 / float(value)  # Probability #xy/#x
-    #                     res.append(abs(act - ideal))  # abs difference
-    #             diffToIdeal = np.mean(res)
-    #             # print(" Current diff %f" % np.mean(res))
-    #             diffForEpoch.append(diffToIdeal)
-    #         # if i * self.batch_size*2105 / len(allPosiblePairPos_u) == 0:  # each iteration record once
-    #             self.skip_gram_model.save_embedding(
-    #                 self.data.id2word, "ours_" + self.output_file_name + "ByBatch_" + str(i) + "_Embed", self.use_cuda)
-    #         self.optimizer.step()
-    #
-    #         process_bar.set_description("Loss: %0.8f, lr: %0.6f" %
-    #                                     (loss.data,
-    #                                      self.optimizer.param_groups[0]['lr']))
-    #         if i * self.batch_size % 10000 == 0:
-    #             print("Come to update:%f" % (i * self.batch_size / 10000))
-    #             lr = self.initial_lr * (1.0 - 1.0 * i / batch_count)
-    #             for param_group in self.optimizer.param_groups:
-    #                 param_group['lr'] = lr
-    #         end = time.time()
-    #         sumTime += end - start
-    #     # Save the final embedding matrix.
-    #     self.skip_gram_model.save_embedding(
-    #         self.data.id2word, self.output_file_name, self.use_cuda)
-    #     print("Total time %d" % sumTime)
-    #     print("Different for different epoch as:")
-    #     for i in range(len(diffForEpoch)):
-    #         print("%d %f" % (i, diffForEpoch[i]))
-    #     # 10 epochs
-    #     if "10" in self.output_file_name:
-    #         self.output_file_name = self.output_file_name[:-1]
-    #     with open(self.output_file_name[:-1] + "log", 'a') as f:
-    #         f.write("TotalTime %d \n" % sumTime)
+    def trainNoDup(self, allPosiblePairPos_u, allPosiblePairPos_v, contextDictID, context_Word_DictID):
+        """Multiple training.
+        context_Word_DictID：For a context x_id, the co-occur with x_id, #x_idy_id.
+        contextDictID： #x_id context apperance
+        Returns:
+            None.
+        """
+        sumTime = 0
+        batchS = 500
+        self.batch_size = batchS
+        #batch_count = self.iteration * (len(allPosiblePairPos_u)) / (self.batch_size*2105)
+        batch_count = self.iteration * (len(allPosiblePairPos_u)) / batchS
+        process_bar = tqdm(range(int(batch_count)))
+        # self.skip_gram_model.save_embedding(
+        #     self.data.id2word, 'begin_embedding.txt', self.use_cuda)
+        diffForEpoch = []
+        for i in process_bar:
+            # allPairsN = self.batch_size *  2105
+            allPairsN = batchS
+            pos_u = allPosiblePairPos_u[allPairsN*(i): allPairsN*(i+1)]
+            pos_v = allPosiblePairPos_v[allPairsN*(i): allPairsN*(i+1)]
+            context_u_num= [float(contextDictID[pair]) for pair in pos_u] # #x
+            real_num = list() # #xy/#x for pos
+            for j in range(len(pos_u)):
+                if pos_v[j] in context_Word_DictID[pos_u[j]]:
+                    real_num.append(context_Word_DictID[pos_u[j]][pos_v[j]]/float(context_u_num[j]))
+                else:
+                    real_num.append(0.0)
+
+            pos_u = Variable(torch.LongTensor(pos_u))
+            pos_v = Variable(torch.LongTensor(pos_v))
+
+            real_num = Variable(torch.FloatTensor(real_num))
+            context_u_num = Variable(torch.FloatTensor(context_u_num))
+            if self.use_cuda:
+                pos_u = pos_u.cuda()
+                pos_v = pos_v.cuda()
+                real_num = real_num.cuda()
+                context_u_num = context_u_num.cuda()
+            start = time.time()
+            self.optimizer.zero_grad()
+            loss = self.skip_gram_model.forwardNoDup(pos_u, pos_v, real_num, context_u_num, self.boost, "NoDup", self.noNeg)
+            # print(loss.item())
+
+            loss.backward()
+            if i * self.batch_size % 1000000 == 0:
+
+                # embedding = self.u_embeddings.weight.data.numpy()
+                firstEmbed = self.skip_gram_model.u_embeddings.weight.data.numpy()
+                secondEmbed = self.skip_gram_model.v_embeddings.weight.data.numpy()
+                word2id = self.data.word2id
+                id2word = self.data.id2word
+
+                def vectorSig(key, key2, emb, emb2):
+                    # print(key)
+                    # print(" key2 %s"%key2)
+                    return sigmoid(emb[key].dot(emb2[key2]))
+
+                res = []
+                for key, value in contextDictID.items():
+                    for key2, value2 in context_Word_DictID[key].items():
+                        #        print(key)
+                        #        print(key2)
+                        ideal = 0
+                        act = vectorSig(key, key2, firstEmbed, secondEmbed)
+                        ideal = value2 / float(value)  # Probability #xy/#x
+                        res.append(abs(act - ideal))  # abs difference
+                diffToIdeal = np.mean(res)
+                # print(" Current diff %f" % np.mean(res))
+                diffForEpoch.append(diffToIdeal)
+#            if i * self.batch_size*2105 / len(allPosiblePairPos_u) == 0:  # each iteration record once
+                self.skip_gram_model.save_embedding(
+                        self.data.id2word, "ours_"+self.output_file_name+"ByBatch_" + str(i)+"_Embed", self.use_cuda)
+            self.optimizer.step()
+
+            process_bar.set_description("Loss: %0.8f, lr: %0.6f" %
+                                        (loss.data,
+                                         self.optimizer.param_groups[0]['lr']))
+            if i * self.batch_size % 1000000 == 0:
+                print("Come to update:%f" % (i * self.batch_size / 1000))
+                lr = self.initial_lr * (1.0 - 1.0 * i / batch_count)
+                for param_group in self.optimizer.param_groups:
+                    param_group['lr'] = lr
+            end = time.time()
+            sumTime += end - start
+        self.skip_gram_model.save_embedding(
+            self.data.id2word, self.output_file_name, self.use_cuda)
+        print("Total time %d" % sumTime)
+        print("Different for different epoch as:")
+        for i in range(len(diffForEpoch)):
+            print("%d %f" % (i, diffForEpoch[i]))
+        # 10 epochs
+        if "10" in self.output_file_name:
+            self.output_file_name = self.output_file_name[:-1]
+        with open(self.output_file_name[:-1] + "log", 'a') as f:
+            f.write("TotalTime %d \n" % sumTime)
     def trainNoDupNoBatch(self, allPosiblePairPos_u, allPosiblePairPos_v, contextDictID, context_Word_DictID):
         """Multiple training.
         context_Word_DictID：For a context x_id, the co-occur with x_id, #x_idy_id.
@@ -274,7 +269,8 @@ class Word2Vec:
         #     self.data.id2word, 'begin_embedding.txt', self.use_cuda)
         diffForEpoch = []
         lastTimeStop = 0
-        for i in process_bar:
+        lastUpdate = 0
+        while lastTimeStop < self.iteration * (len(allPosiblePairPos_u)):
             # allPairsN = self.batch_size *  2105
             allPairsN = batchS
             pos_u = allPosiblePairPos_u[lastTimeStop  : lastTimeStop + allPairsN ]
@@ -290,12 +286,11 @@ class Word2Vec:
                 else:
                     countofXY = countofXY+1
                     real_num.append(0.0)
-                readIn = j + 1
+                readIn = j+1
                 if countofXY>= allPairsN:
                     if readIn > 1:
-                      break
+                     break
 
-            print(lastTimeStop)
             pos_u = pos_u[:readIn]
             pos_v = pos_v[:readIn]
             context_u_num = [float(contextDictID[pair]) for pair in pos_u]
@@ -317,7 +312,7 @@ class Word2Vec:
             # print(loss.item())
 
             loss.backward()
-            if lastTimeStop % 100000 == 0:
+            if math.floor(lastTimeStop/500000) > lastUpdate:
 
                 # embedding = self.u_embeddings.weight.data.numpy()
                 firstEmbed = self.skip_gram_model.u_embeddings.weight.data.numpy()
@@ -350,15 +345,15 @@ class Word2Vec:
             process_bar.set_description("Loss: %0.8f, lr: %0.6f" %
                                         (loss.data,
                                          self.optimizer.param_groups[0]['lr']))
-            if lastTimeStop % 10000 == 0:
+            if math.floor(lastTimeStop/500000) > lastUpdate:
+                lastUpdate = math.floor(lastTimeStop/500000)
                 print("Come to update:%f" % (lastTimeStop))
-                lr = self.initial_lr * (1.0 - 1.0 * lastTimeStop / (batch_count*batchS))
+                lr = self.initial_lr * (1.0 - 1.0 * lastTimeStop / (batch_count))
                 for param_group in self.optimizer.param_groups:
                     param_group['lr'] = lr
             end = time.time()
             sumTime += end - start
-            if lastTimeStop >= self.iteration * (len(allPosiblePairPos_u)):
-                break
+
         self.skip_gram_model.save_embedding(
             self.data.id2word, self.output_file_name, self.use_cuda)
         print("Total time %d" % sumTime)
@@ -495,8 +490,6 @@ if __name__ == '__main__':
             for j in range(len(data.id2word)):
                 allPosiblePairPos_u.append(i)
                 allPosiblePairPos_v.append(j)
-
-
     w2v = Word2Vec(input_file_name=sys.argv[1], output_file_name=sys.argv[2], boost = int(sys.argv[3]), iteration = int(sys.argv[4]), noNeg = int(sys.argv[5]), loss = sys.argv[6])
     #w2v.train()
     #start = time.time()
